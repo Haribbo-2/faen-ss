@@ -406,13 +406,11 @@ input[type=file]{display:none}
 .history-floating .btn:disabled{opacity:.53;cursor:default}
 .png-preview-dialog{width:min(96vw,1200px);max-width:96vw;max-height:94vh;border:1px solid #d5d5d8;border-radius:12px;padding:12px;background:#fff;color:#222;box-shadow:0 15px 45px rgba(0,0,0,.28)}
 .png-preview-dialog::backdrop{background:rgba(0,0,0,.62)}
-.png-preview-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.png-preview-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .png-preview-header strong{font-size:14px}
-.png-preview-actions{display:flex;gap:6px;margin-left:auto}
-.png-preview-actions .btn{white-space:nowrap}
 .png-preview-dialog p{font-size:12px;color:#555;margin:0 0 10px;line-height:1.45}
 .png-preview-scroll{max-height:calc(94vh - 118px);overflow:auto;text-align:center}
-.png-preview-scroll img{display:block;width:100%;height:auto;max-width:100%;margin:auto;-webkit-touch-callout:default;user-select:auto;touch-action:auto}
+.png-preview-scroll img{display:block;width:100%;height:auto;max-width:100%;margin:auto;-webkit-touch-callout:none;user-select:none;pointer-events:none}
 @media(max-width:520px){.history-floating{right:10px;bottom:calc(42px + env(safe-area-inset-bottom))}.history-floating .btn{width:44px;min-width:44px;height:44px;min-height:44px}.png-preview-dialog{padding:9px}.png-preview-scroll{max-height:calc(94vh - 120px)}}
 .middle>.editor-panel.ng-box{min-height:0}
 .ng-section .content-edit{min-height:46px}
@@ -545,9 +543,9 @@ input[type=file]{display:none}
 <button class="btn" id="undoEdit" type="button" aria-label="실행 취소" title="실행 취소" disabled>↶</button>
 </div>
 <dialog class="png-preview-dialog" id="pngPreviewDialog" aria-label="저장할 PNG 미리보기">
-<div class="png-preview-header"><strong>저장할 PNG 미리보기</strong><div class="png-preview-actions"><button class="btn primary" id="savePreviewPng" type="button">원본 PNG 저장</button><button class="btn" id="closePngPreview" type="button">닫기</button></div></div>
-<p>원본 PNG 저장을 누르면 미리보기 화면의 축소와 관계없이 원본 크기로 저장됩니다. 이미지 우클릭·길게 누르기도 가능합니다.</p>
-<div class="png-preview-scroll"><img id="pngPreviewImage" alt="저장할 트친소표 PNG 이미지"/></div>
+<div class="png-preview-header"><strong>저장할 PNG 미리보기</strong><button class="btn" id="closePngPreview" type="button">닫기</button></div>
+<p>이미지 배치를 확인하는 화면입니다. 파일은 편집 화면의 PNG로 저장 버튼으로 저장해 주세요.</p>
+<div class="png-preview-scroll"><img id="pngPreviewImage" alt="저장할 트친소표 PNG 이미지" draggable="false"/></div>
 </dialog>
 <script>
 const $=id=>document.getElementById(id);
@@ -1011,18 +1009,16 @@ function downloadPngBlob(blob){
  setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 $('download').addEventListener('click',()=>runExport($('download'),'PNG 만드는 중…',downloadPngBlob));
-let previewImageUrl=null,previewImageBlob=null;
+let previewImageUrl=null;
 function clearPreviewImage(){
  $('pngPreviewImage').removeAttribute('src');
  if(previewImageUrl){URL.revokeObjectURL(previewImageUrl);previewImageUrl=null;}
- previewImageBlob=null;
 }
 $('previewPng').addEventListener('click',()=>runExport($('previewPng'),'미리보기 만드는 중…',blob=>{
- clearPreviewImage();previewImageBlob=blob;previewImageUrl=URL.createObjectURL(blob);
+ clearPreviewImage();previewImageUrl=URL.createObjectURL(blob);
  $('pngPreviewImage').src=previewImageUrl;
  $('pngPreviewDialog').showModal();
 }));
-$('savePreviewPng').addEventListener('click',()=>{if(previewImageBlob)downloadPngBlob(previewImageBlob);});
 $('closePngPreview').addEventListener('click',()=>$('pngPreviewDialog').close());
 $('pngPreviewDialog').addEventListener('close',clearPreviewImage);
 $('resetAll').addEventListener('click',()=>{
