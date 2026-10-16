@@ -389,6 +389,8 @@ input[type=file]{display:none}
 .middle.custom-panels>.fixed-free-top{grid-row:1!important}
 .middle.custom-panels>.fixed-free-bottom{grid-row:2!important}
 .profile-card[data-compact-layout="true"]{min-height:0}
+.profile-card[data-no-characters="true"]{min-height:0}
+.profile-card[data-no-characters="true"] .card-inner{grid-template-rows:auto auto}
 .profile-card.png-export .card-inner{z-index:2}
 .profile-card.png-export .export-watermark{position:absolute;right:22px;bottom:22px;z-index:1;max-width:45%;color:var(--ink);opacity:.32;font-family:Georgia,"Times New Roman",serif!important;font-size:50px;font-weight:600;font-style:italic;line-height:1;letter-spacing:.16em;white-space:nowrap;text-align:right;pointer-events:none;user-select:none}
 #panelLayoutGroup{position:relative}
@@ -410,7 +412,7 @@ input[type=file]{display:none}
 .png-preview-header strong{font-size:14px}
 .png-preview-dialog p{font-size:12px;color:#555;margin:0 0 10px;line-height:1.45}
 .png-preview-scroll{max-height:calc(94vh - 118px);overflow:auto;text-align:center}
-.png-preview-scroll img{display:block;width:100%;height:auto;max-width:100%;margin:auto;-webkit-touch-callout:none;user-select:none;pointer-events:none}
+.png-preview-scroll img{display:block;width:100%;height:auto;max-width:100%;margin:auto;-webkit-touch-callout:default;user-select:auto;touch-action:auto}
 @media(max-width:520px){.history-floating{right:10px;bottom:calc(42px + env(safe-area-inset-bottom))}.history-floating .btn{width:44px;min-width:44px;height:44px;min-height:44px}.png-preview-dialog{padding:9px}.png-preview-scroll{max-height:calc(94vh - 120px)}}
 .middle>.editor-panel.ng-box{min-height:0}
 .ng-section .content-edit{min-height:46px}
@@ -544,8 +546,8 @@ input[type=file]{display:none}
 </div>
 <dialog class="png-preview-dialog" id="pngPreviewDialog" aria-label="저장할 PNG 미리보기">
 <div class="png-preview-header"><strong>저장할 PNG 미리보기</strong><button class="btn" id="closePngPreview" type="button">닫기</button></div>
-<p>이미지 배치를 확인하는 화면입니다. 파일은 편집 화면의 PNG로 저장 버튼으로 저장해 주세요.</p>
-<div class="png-preview-scroll"><img id="pngPreviewImage" alt="저장할 트친소표 PNG 이미지" draggable="false"/></div>
+<p>PC에서는 이미지를 우클릭, 휴대폰에서는 길게 눌러 사진으로 저장할 수 있어요.</p>
+<div class="png-preview-scroll"><img id="pngPreviewImage" alt="저장할 트친소표 PNG 이미지"/></div>
 </dialog>
 <script>
 const $=id=>document.getElementById(id);
@@ -800,6 +802,12 @@ $('freeEditor').addEventListener('input',e=>{
 });
 fitMessage();
 let charCount=0;
+function syncCharacterVisibility(){
+ const empty=!$('characters').querySelector('.character-row');
+ card.dataset.noCharacters=String(empty);
+ card.querySelector('.bottom').hidden=empty;
+ queuePixelSizeUpdate();
+}
 function renderCharacterCropEditor(){
  const host=$('characterCropEditor'); if(!host)return;
  const expanded=new Set([...host.querySelectorAll('.character-crop-details[open]')].map(section=>section.dataset.char));
@@ -832,6 +840,7 @@ function removeCharacterRow(row){
  renderCharacterCropEditor();
  updateCharacterOrderButtons();
  $('removeCharacter').disabled=!$('characters').children.length;
+ syncCharacterVisibility();
 }
 function updateCharacterOrderButtons(){
  const rows=[...$('characters').querySelectorAll('.character-row')];
@@ -860,7 +869,7 @@ function addCharacter(){
  row.querySelector('.move-char-up').addEventListener('click',()=>moveCharacterRow(row,-1));
  row.querySelector('.move-char-down').addEventListener('click',()=>moveCharacterRow(row,1));
  row.querySelector('.char-name').addEventListener('input',renderCharacterCropEditor);
- $('characters').append(row);$('removeCharacter').disabled=false;applyCharacterText();renderCharacterCropEditor();updateCharacterOrderButtons();refreshCropTargets();
+ $('characters').append(row);$('removeCharacter').disabled=false;applyCharacterText();renderCharacterCropEditor();updateCharacterOrderButtons();refreshCropTargets();syncCharacterVisibility();
 }
 $('addCharacter').addEventListener('click',addCharacter);
 $('addCharacterInline').addEventListener('click',addCharacter);
@@ -896,7 +905,7 @@ function getExportDimensions(){
  // Use the live card's actual rendered size so added characters and long text are included.
  const rect=card.getBoundingClientRect();
  const width=Math.max(designWidth,Math.ceil(Math.max(card.scrollWidth,rect.width)));
- const minimumHeight=card.dataset.compactLayout==='true'?0:designHeight;
+ const minimumHeight=card.dataset.compactLayout==='true'||card.dataset.noCharacters==='true'?0:designHeight;
  const height=Math.max(minimumHeight,Math.ceil(Math.max(card.scrollHeight,rect.height)));
  return {width,height};
 }
@@ -951,7 +960,7 @@ function createCroppedExportCanvas(img){
 function prepareExportClone(){
  const clone=card.cloneNode(true);
  const {width}=getExportDimensions();
- clone.style.cssText += `;position:fixed!important;left:-100000px!important;top:0!important;width:${width}px!important;max-width:none!important;height:auto!important;min-height:${card.dataset.compactLayout==='true'?0:designHeight}px!important;aspect-ratio:auto!important;overflow:visible!important;margin:0!important;transform:none!important;`;
+ clone.style.cssText += `;position:fixed!important;left:-100000px!important;top:0!important;width:${width}px!important;max-width:none!important;height:auto!important;min-height:${card.dataset.compactLayout==='true'||card.dataset.noCharacters==='true'?0:designHeight}px!important;aspect-ratio:auto!important;overflow:visible!important;margin:0!important;transform:none!important;`;
  const liveCropImages=[...card.querySelectorAll('.avatar img,.char-image img')];
  const cloneCropImages=[...clone.querySelectorAll('.avatar img,.char-image img')];
  liveCropImages.forEach((img,index)=>cloneCropImages[index].replaceWith(createCroppedExportCanvas(img)));
@@ -971,8 +980,10 @@ function prepareExportClone(){
  });
  clone.querySelectorAll('[contenteditable="true"]').forEach(el=>{el.removeAttribute('contenteditable');});
  clone.classList.add('png-export');
- const watermark=document.createElement('div');watermark.className='export-watermark';
- watermark.textContent='THEMIS';watermark.setAttribute('aria-hidden','true');clone.appendChild(watermark);
+ if(card.dataset.noCharacters!=='true'){
+  const watermark=document.createElement('div');watermark.className='export-watermark';
+  watermark.textContent='THEMIS';watermark.setAttribute('aria-hidden','true');clone.appendChild(watermark);
+ }
  document.body.appendChild(clone);
  return clone;
 }
@@ -1003,12 +1014,11 @@ async function runExport(button,busyText,work){
  catch(err){console.error(err);alert('PNG 생성에 실패했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.\n'+(err?.message||''));}
  finally{button.textContent=original;$('download').disabled=false;$('previewPng').disabled=false;exportInProgress=false;}
 }
-function downloadPngBlob(blob){
+$('download').addEventListener('click',()=>runExport($('download'),'PNG 만드는 중…',blob=>{
  const url=URL.createObjectURL(blob),link=document.createElement('a');
  link.href=url;link.download='트친소표.png';document.body.appendChild(link);link.click();link.remove();
- setTimeout(()=>URL.revokeObjectURL(url),60000);
-}
-$('download').addEventListener('click',()=>runExport($('download'),'PNG 만드는 중…',downloadPngBlob));
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+}));
 let previewImageUrl=null;
 function clearPreviewImage(){
  $('pngPreviewImage').removeAttribute('src');
@@ -1391,6 +1401,7 @@ function restoreDraft(state){
    if(row.querySelector('textarea.char-name'))fitCharacterName(row.querySelector('.char-name'));
   });
   charCount=Math.max(charCount,state.charCount||0);applyCharacterText();renderCharacterCropEditor();
+  $('removeCharacter').disabled=!$('characters').children.length;syncCharacterVisibility();
   fontAssetId=state.fontAssetId||null;uploadedFontFamily=state.fontFamily||'';
   uploadedFontUrl=draftAssetUrl(fontAssetId);
   $('removeFont').hidden=!uploadedFontUrl;
